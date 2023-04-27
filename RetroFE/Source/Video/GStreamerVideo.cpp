@@ -101,7 +101,7 @@ bool GStreamerVideo::initialize()
         return true;
     }
 
-    std::string path = Utils::combinePath(Configuration::absolutePath, "Core");
+    std::string path = Utils::combinePath(Configuration::absolutePath, "retrofe");
     gst_init(NULL, NULL);
 
 #ifdef WIN32
@@ -275,7 +275,7 @@ bool GStreamerVideo::play(std::string file)
                 if (g_str_has_prefix(elementName, "avdec_h264") || g_str_has_prefix(elementName, "avdec_h265"))
                 {
                     // Modify the properties of the avdec_h265 element here
-                    // set "thread-type" property to 2 and "max-threads" to 1
+                    // set "thread-type" property to 2 and "max-threads" to 2
                     g_object_set(G_OBJECT(element), "thread-type", 2, "max-threads", 2, NULL);
                 }
 
