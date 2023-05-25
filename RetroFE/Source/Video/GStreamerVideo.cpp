@@ -115,7 +115,7 @@ bool GStreamerVideo::initialize()
         return true;
     }
 
-    std::string path = Utils::combinePath(Configuration::absolutePath, "Core");
+    std::string path = Utils::combinePath(Configuration::absolutePath, "retrofe");
     gst_init(NULL, NULL);
 
 #ifdef WIN32
