@@ -239,10 +239,29 @@ bool Component::animate()
     {
         bool currentDone = true;
         TweenSet *tweens = currentTweens_->tweenSet(currentTweenIndex_);
-
+        std::string playlist;
+        bool foundFiltered;
         for(unsigned int i = 0; i < tweens->size(); i++)
         {
             Tween *tween = tweens->tweens()->at(i);
+            // only animate if filter matches current playlist or in playlist1,playlist2,playlist3
+            if (tween->playlistFilter != "" && playlistName != "") {
+                foundFiltered = false;
+                std::stringstream ss(tween->playlistFilter);
+                playlist = "";
+                while (ss.good())
+                {
+                    getline(ss, playlist, ',');
+                    if (playlistName == playlist) {
+                        foundFiltered = true;
+                        break;
+                    }
+                }
+                // didn't find match, skip
+                if (!foundFiltered) {
+                    continue;
+                }
+            }
             double elapsedTime = elapsedTweenTime_;
 
             //todo: too many levels of nesting
@@ -401,6 +420,9 @@ bool Component::animate()
                 break;
 
             case TWEEN_PROPERTY_NOP:
+                break;
+            case TWEEN_PROPERTY_RESTART:
+                baseViewInfo.Restart = tween->duration && !elapsedTime;
                 break;
             }
         }

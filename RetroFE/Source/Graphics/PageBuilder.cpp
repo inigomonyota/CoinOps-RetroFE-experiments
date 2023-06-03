@@ -1316,6 +1316,7 @@ void PageBuilder::buildViewInfo(xml_node<> *componentXml, ViewInfo &info, xml_no
     xml_attribute<> *containerHeight    = findAttribute(componentXml, "containerHeight", defaultXml);
     xml_attribute<> *monitor            = findAttribute(componentXml, "monitor", defaultXml);
     xml_attribute<> *volume             = findAttribute(componentXml, "volume", defaultXml);
+    xml_attribute<>* restart = findAttribute(componentXml, "restart", defaultXml);
 
     info.X = getHorizontalAlignment(x, 0);
     info.Y = getVerticalAlignment(y, 0);
@@ -1358,6 +1359,7 @@ void PageBuilder::buildViewInfo(xml_node<> *componentXml, ViewInfo &info, xml_no
     info.ContainerHeight    = containerHeight    ? Utils::convertFloat(containerHeight->value())   : -1.f;
     info.Monitor            = monitor            ? Utils::convertInt(monitor->value())             : 0;
     info.Volume             = volume             ? Utils::convertFloat(volume->value())            : 1.f;
+    info.Restart = restart ? Utils::toLower(restart->value()) == "true" : false;
 
     if(fontColor)
     {
@@ -1417,6 +1419,7 @@ void PageBuilder::getAnimationEvents(xml_node<> *node, TweenSet &tweens)
             xml_attribute<> *to = animate->first_attribute("to");
             xml_attribute<> *algorithmXml = animate->first_attribute("algorithm");
             xml_attribute<>* setting = animate->first_attribute("setting");
+            xml_attribute<>* playlist = animate->first_attribute("playlist");
 
             std::string animateType;
             if (type)
@@ -1429,7 +1432,7 @@ void PageBuilder::getAnimationEvents(xml_node<> *node, TweenSet &tweens)
             {
                 Logger::write(Logger::ZONE_ERROR, "Layout", "Animate tag missing \"type\" attribute");
             }
-            else if(!to && animateType != "nop")
+            else if(!to && (animateType != "nop" && animateType != "restart"))
             {
                 Logger::write(Logger::ZONE_ERROR, "Layout", "Animate tag missing \"to\" attribute");
             }
@@ -1439,6 +1442,7 @@ void PageBuilder::getAnimationEvents(xml_node<> *node, TweenSet &tweens)
                 if (setting && setting->value() != actionSetting) {
                     continue;
                 }
+
                 float fromValue = 0.0f;
                 bool  fromDefined = true;
                 if (from)
@@ -1465,7 +1469,7 @@ void PageBuilder::getAnimationEvents(xml_node<> *node, TweenSet &tweens)
 
                 }
 
-                if(Tween::getTweenProperty(type->value(), property))
+                if(Tween::getTweenProperty(animateType, property))
                 {
                     switch(property)
                     {
@@ -1502,14 +1506,16 @@ void PageBuilder::getAnimationEvents(xml_node<> *node, TweenSet &tweens)
 
                     case TWEEN_PROPERTY_MAX_WIDTH:
                     case TWEEN_PROPERTY_MAX_HEIGHT:
-                      fromValue = getVerticalAlignment(from, FLT_MAX);
-                      toValue   = getVerticalAlignment(to,   FLT_MAX);
-
+                        fromValue = getVerticalAlignment(from, FLT_MAX);
+                        toValue   = getVerticalAlignment(to,   FLT_MAX);
+                        break;
                     default:
                         break;
                     }
 
-                    Tween *t = new Tween(property, algorithm, fromValue, toValue, durationValue);
+                    // if in layout action has playlist="<current playlist name>" then perform action
+                    std::string playlistFilter = playlist && playlist->value() ? playlist->value() : "";
+                    Tween *t = new Tween(property, algorithm, fromValue, toValue, durationValue, playlistFilter);
                     if (!fromDefined)
                       t->startDefined = false;
                     tweens.push(t);
